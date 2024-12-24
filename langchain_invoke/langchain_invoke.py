@@ -9,6 +9,11 @@ from dotenv import load_dotenv
 
 from .classes import CustomCallbackManager
 
+# To avoid the below error, separate the function into some chains.
+# Thread 'ThreadPoolExecutor-1_0': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+# The below discussion cloud be helpful?
+# https://discuss.streamlit.io/t/warning-for-missing-scriptruncontext/83893/7
+
 
 def set_envs():
     load_dotenv()
@@ -28,10 +33,6 @@ def sample_retriever(input: dict[str, str]):
     return db.as_retriever().invoke(input["question"])
 
 
-# To avoid the below error, separate the function into two chains.
-# Thread 'ThreadPoolExecutor-1_0': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-# The below discussion cloud be helpful?
-# https://discuss.streamlit.io/t/warning-for-missing-scriptruncontext/83893/7
 def embedding_and_retriever(text: str, run_id: str):
     config = RunnableConfig({"callbacks": [CustomCallbackManager()], "run_id": run_id})
 

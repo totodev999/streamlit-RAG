@@ -8,10 +8,6 @@ from langchain_invoke.langchain_invoke import (
 import uuid
 
 
-def print_text(text: str):
-    print(text)
-
-
 def main():
     st.title("Hello world")
 
