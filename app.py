@@ -1,11 +1,13 @@
 import streamlit as st
-from langchain_invoke.langchain_invoke import (
-    set_envs,
-    embedding_and_retriever,
-    create_prompt,
-    get_answer,
-)
+from langchain_invoke.simple_RAG import invoke_simple_RAG
+from langchain_invoke.multiple_query_RAG import invoke_multiple_query_RAG
+from utils.set_env import set_envs
 import uuid
+
+invoke_settings = {
+    "simple_RAG": invoke_simple_RAG,
+    "multiple_query_RAG": invoke_multiple_query_RAG,
+}
 
 
 def main():
@@ -13,20 +15,15 @@ def main():
 
     with st.form(key="my_form"):
         text = st.text_area("質問を入力してください")
+        selected = st.selectbox(
+            "モデルを選択してください", list(invoke_settings.keys())
+        )
         submited = st.form_submit_button("送信")
 
     if submited:
         run_id = uuid.uuid4()
         set_envs()
-        documents = embedding_and_retriever(text=text, run_id=run_id)
-        st.json(documents)
-
-        prompt_template = create_prompt(question=text, context=documents, run_id=run_id)
-        prompt = prompt_template.messages[0]
-        st.json(prompt)
-
-        answer = get_answer(prompt=prompt_template, run_id=run_id)
-        st.json(answer)
+        invoke_settings[selected](text=text, run_id=run_id)
 
 
 if __name__ == "__main__":

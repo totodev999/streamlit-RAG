@@ -4,8 +4,7 @@ from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 
-import os
-from dotenv import load_dotenv
+import streamlit as st
 
 from .classes import CustomCallbackManager
 
@@ -13,12 +12,6 @@ from .classes import CustomCallbackManager
 # Thread 'ThreadPoolExecutor-1_0': missing ScriptRunContext! This warning can be ignored when running in bare mode.
 # The below discussion cloud be helpful?
 # https://discuss.streamlit.io/t/warning-for-missing-scriptruncontext/83893/7
-
-
-def set_envs():
-    load_dotenv()
-    openai_key = os.getenv("OPENAI_API_KEY")
-    os.environ["OPENAI_API_KEY"] = openai_key
 
 
 def sample_retriever(input: dict[str, str]):
@@ -38,7 +31,10 @@ def embedding_and_retriever(text: str, run_id: str):
 
     chain = RunnableLambda(sample_retriever)
 
-    return chain.invoke({"question": text, "run_id": run_id}, config=config)
+    documents = chain.invoke({"question": text, "run_id": run_id}, config=config)
+
+    st.json(documents)
+    return documents
 
 
 def create_prompt(
@@ -59,11 +55,26 @@ def create_prompt(
         "question": lambda x: x["question"],
         "context": lambda x: x["context"],
     } | prompt
-    return chain.invoke({"question": question, "context": context}, config=config)
+    prompt_result = chain.invoke(
+        {"question": question, "context": context}, config=config
+    )
+
+    st.json(prompt_result)
+    return prompt_result
 
 
 def get_answer(prompt: ChatPromptTemplate, run_id: str):
     # dispatch_custom_event(name="get_answer", data=input)
     model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
     config = RunnableConfig({"callbacks": [CustomCallbackManager()], "run_id": run_id})
-    return model.invoke(prompt, config=config)
+    answer = model.invoke(prompt, config=config)
+
+    st.json(answer)
+    return answer
+
+
+def invoke_simple_RAG(text: str, run_id: str):
+    documents = embedding_and_retriever(text=text, run_id=run_id)
+    prompt = create_prompt(question=text, context=documents, run_id=run_id)
+    get_answer(prompt=prompt, run_id=run_id)
+    return prompt, documents
